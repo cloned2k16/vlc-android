@@ -14,7 +14,7 @@ Check our [AndroidCompile wiki page](https://wiki.videolan.org/AndroidCompile/)
 build it is quite easy , even in windos 10 ..  
 the tricky part is to get the main VLC library built ..
 
-so.. this fork is mostly intended for make overall compilation easier ..
+so.. this fork is mostly intended to make overall compilation easier ..
 
 ## Contribute
 
