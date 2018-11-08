@@ -8,8 +8,13 @@ VLC for Android is licensed under GPLv3
 
 You will need a recent Linux distribution to build VLC.
 It should work with Windows 10, but no official support for this.
-
 Check our [AndroidCompile wiki page](https://wiki.videolan.org/AndroidCompile/)
+
+#### please note:
+build it is quite easy , even in windos 10 ..  
+the tricky part is to get the main VLC library built ..
+
+so.. this fork is mostly intended for make overall compilation easier ..
 
 ## Contribute
 
