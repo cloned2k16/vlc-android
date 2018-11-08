@@ -1,6 +1,10 @@
 #!/bin/sh
 #-----------------------------------------------------------------------------------------------------------------------
-	[ -d vlc/contrib/native-build ] || . ./_env.sh
-	cd vlc/contrib/native-build
-	make "$@"
+# 	TO.DO .. we must split _env.sh 
+#			 so we can share things here !!   
+#				'native-build' harcoded here is a really bad idea !!
+#
+    [ -d vlc/contrib/native-build ] || . ./_env.sh
+    cd vlc/contrib/native-build
+    make "$@"
 #-----------------------------------------------------------------------------------------------------------------------
