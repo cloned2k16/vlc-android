@@ -229,31 +229,6 @@ if [ ! -d "$ANDROID_SDK/licenses" ]; then
     echo "84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_SDK/licenses/android-sdk-preview-license"
 fi
 
-####################
-# Fetch VLC source #
-####################
-
-TESTED_HASH=5a7ad1b
-if [ ! -d "vlc" ]; then
-    diagnostic "VLC source not found, cloning"
-    git clone https://git.videolan.org/git/vlc/vlc-3.0.git vlc
-    checkfail "vlc source: git clone failed"
-fi
-diagnostic "VLC source found"
-cd vlc
-if ! git cat-file -e ${TESTED_HASH}; then
-    cat 1>&2 << EOF
-***
-*** Error: Your vlc checkout does not contain the latest tested commit: ${TESTED_HASH}
-***
-EOF
-    exit 1
-fi
-if [ "$RELEASE" = 1 ]; then
-    git reset --hard ${TESTED_HASH}
-fi
-cd ..
-
 
 ############
 # Make VLC #
