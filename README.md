@@ -24,8 +24,8 @@ git clone https://github.com/cloned2k16/vlc-android-lib.git
 cd vlc-android-lib
 
 . ./_env.sh
-.makeContrib fetch-all
-.makeContrib
+./makeContrib fetch-all
+./makeContrib
 ```
 which will hopefully would get you ready to cross-compile for Android  
 with:
