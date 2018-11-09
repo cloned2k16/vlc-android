@@ -1,69 +1,77 @@
 #!/bin/sh
+
+# designed for being sourced ...
+
+[ $_ != $0 ] || { echo "Please surceMe !!  (. $0 ;)"; exit 666; } 
+
 #-----------------------------------------------------------------------------------------------------------------------
 #   please make sure you set up this before you start
 #
 #
-ANDROID_SDK=
-ANDROID_NDK=
-ANDROID_ABI=arm   
+				ANDROID_SDK=/home/paolo/android-sdk
+				ANDROID_NDK=/home/paolo/android-sdk/android-ndk-r18b
 
-RELEASE=0
+
+				       PATH="$PATH:$ANDROID_SDK/platform-tools:$ANDROID_SDK/tools"
+               ANDROID_HOME="$ANDROID_SDK"
+           ANDROID_NDK_HOME="$ANDROID_NDK"
+                
+				ANDROID_ABI=arm   
+                    RELEASE=0
+					
 # we expect to use a specific .git version of VLC ... 
 # override it if it make sense to you ...
 #
-VLC_URL="https://git.videolan.org/git/vlc/vlc-3.0.git"
-VLC_CHECKOUT="tags/3.0.3-1"
-
-
-
-#tags/3.0.3-1
-VLC_HASH=c2bb759264
-
-FORCE_COMMIT=0
+                    VLC_URL="https://git.videolan.org/git/vlc/vlc-3.0.git"
+               VLC_CHECKOUT="tags/3.0.3-1"
+                   VLC_HASH=c2bb759264
+             FORCE_CHECKOUT=0
 
 
 # compiles native x86_64 but none of ARM !!
 #VLC_HASH="5a7ad1b636"
 #-----------------------------------------------------------------------------------------------------------------------
-                        ESC="\033"
-                        RED="$ESC[0;31m"
-                      GREEN="$ESC[0;32m"
-                     ORANGE="$ESC[0;33m"
-                     LGREEN="$ESC[1;32m"
-                      LGRAY="$ESC[0;37m"
-                    LOG_COL="$GREEN"
-                    INF_COL="$LGREEN"
-                    WRN_COL="$ORANGE"
-                    ERR_COL="$RED"
-                    
-                         NC="$ESC[0m"
-
+	_ansiMsg		()												{	
+	    local col;
+		local who=${FUNCNAME[ 1 ]}
+		case $who in
+			_log) 			col="\033[0;32m"						;;
+			_inf)			col="\033[0;36m"						;;
+			_wrn) 			col="\033[0;33m"						;;
+			_err) 			col="\033[0;31m"						;;
+			_abortError)	col="\033[38;2;255;11;33m"				;;
+			*)          	col="\033[0m"							;;
+		esac
+		echo -e "$col $@ \033[0m"
+	}
 #-----------------------------------------------------------------------------------------------------------------------
-    _log            ()  { echo $LOG_COL~ "$@" $NC ; }
+    _log            ()  											{ _ansiMsg "~ $@" ; }
 #-----------------------------------------------------------------------------------------------------------------------
-    _inf            ()  { echo $INF_COL~ "$@" $NC   ;   }
+    _inf            ()  											{ _ansiMsg "~ $@" ; }
 #-----------------------------------------------------------------------------------------------------------------------
-    _wrn            ()  { echo $WRN_COL~ "$@" $NC   ;   }
+    _wrn            ()  											{ _ansiMsg "! $@" ; }
 #-----------------------------------------------------------------------------------------------------------------------
-    _err            ()  { echo $ERR_COL~ "$@" $NC   ;   }
+    _err            ()  											{ _ansiMsg "! $@" ; }
 #-----------------------------------------------------------------------------------------------------------------------
-    _abortError     ()  {
-            _err "$@"
-            exit 1
+    _abortError     ()  											{
+            _ansiMsg "!! $@"
+            return 1
     }
-    _abortIfError   ()  {
+    _abortIfError   ()  											{
         if [ ! $? -eq 0 ];then
             _abortError "$@"
         fi
     }
 #-----------------------------------------------------------------------------------------------------------------------
-#   
+
     phase1(){ _inf PHASE 1; }
     phase2(){ _inf PHASE 2; }
     phase3(){ _inf PHASE 3; }
-    #cat >/dev/null <<phase3
+    phase4(){ _inf PHASE 4; }
+    
 #-----------------------------------------------------------------------------------------------------------------------
 phase1
+#cat >/dev/null <<phase4
 
 #-----------------------------------------------------------------------------------------------------------------------
     ARCH="$(uname -p)"
@@ -110,14 +118,16 @@ phase2
 
 #-----------------------------------------------------------------------------------------------------------------------
     PROTOBUF_VER="$(sudo apt-get -s install protobuf-compiler | grep version)"
-    PROTOBUF_VER="${PROTOBUF_VER##*(}"
-    PROTOBUF_VER="${PROTOBUF_VER%)*}"
+    PROTOBUF_VER="${PROTOBUF_VER##* (}"
+    PROTOBUF_VER=${PROTOBUF_VER%%)*}
     PROTOBUF_VER_HI=${PROTOBUF_VER%%.*}
+	_inf protobuf version is: $PROTOBUF_VER
 #-----------------------------------------------------------------------------------------------------------------------
     [ 2 -ge $PROTOBUF_VER_HI ] && { _err "protobuf version < 3.x.x" : [$PROTOBUF_VER]; exit; }
 #-----------------------------------------------------------------------------------------------------------------------
+	DONE=0
     ATTEMPTS=3
-    DONE=0
+    BASE_DIR="$(pwd)"
     while [ $DONE -eq 0 ]
     do  
         if [ ! -d "vlc" ]; then
@@ -130,8 +140,8 @@ phase2
             _log "VLC source found"
             cd vlc
         fi
-        
-        if ! $(git fsck --full) ;then 
+        _inf "check integrity .."
+        if ! git fsck --full;then 
             ATTEMPTS=$((ATTEMPTS-1))
             _wrn "Integrity check failed! ($ATTEMPTS attempts left)"
             cd ..
@@ -140,12 +150,13 @@ phase2
                 _abortError "can't get the VLC sources .."
             fi
         else
-            if ! $(git cat-file -e ${VLC_HASH} 2>/dev/null) ; then
+			_inf "check commit HASH"
+            if  ! $(git cat-file -e ${VLC_HASH} 2>/dev/null); then
                 _err "can't find expected HASH"
                 # we can eventually make this optional
                 _wrn "we don't reconize this version,\n   compile it at your own risk ..."
                 
-                if [ "$FORCE_COMMIT" = 1 ]; then
+                if [ "$FORCE_CHECKOUT" = 1 ]; then
                     git reset --hard ${TESTED_HASH}
                     
                 fi
@@ -155,7 +166,7 @@ phase2
             DONE=1
         fi 
     done            
-    cd ..
+    cd "$BASE_DIR"
 #-----------------------------------------------------------------------------------------------------------------------
 phase3
     
@@ -192,3 +203,9 @@ phase3
     _wrn "use makeContrib <...>\n    instead\n       or change dir to $(pwd)"
     
     cd "$BASE_DIR"
+#-----------------------------------------------------------------------------------------------------------------------
+phase4
+
+    _abortError "The End."
+#-----------------------------------------------------------------------------------------------------------------------
+	
