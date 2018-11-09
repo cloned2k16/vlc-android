@@ -2,14 +2,14 @@
 
 # designed for being sourced ...
 
-[ $_ != $0 ] || { echo "Please surceMe !!  (. $0 ;)"; exit 666; } 
+[ $_ != $0 ] || { echo "Please sourceMe !!  (. $0 ;)"; exit 666; } 
 
 #-----------------------------------------------------------------------------------------------------------------------
 #   please make sure you set up this before you start
 #
 #
                 ANDROID_SDK=/home/paolo/android-sdk
-                ANDROID_NDK=/home/paolo/android-sdk/android-ndk-r18b
+                ANDROID_NDK=/home/paolo/android-sdk/android-ndk-r14b
 
 
                        PATH="$PATH:$ANDROID_SDK/platform-tools:$ANDROID_SDK/tools"
@@ -87,7 +87,7 @@ phase1
                             _log "installl support libraries .."
                             sudo apt-get install zlib1g:i386 libstdc++6:i386 libc6:i386
                         ;;
-            *)              _err    "unexpected Architecture $ARCH !!"      
+            *)              _abortError "unexpected Architecture $ARCH !!"      
                         ;;
     esac
 #-----------------------------------------------------------------------------------------------------------------------
@@ -123,7 +123,7 @@ phase2
     PROTOBUF_VER_HI=${PROTOBUF_VER%%.*}
     _inf protobuf version is: $PROTOBUF_VER
 #-----------------------------------------------------------------------------------------------------------------------
-    [ 2 -ge $PROTOBUF_VER_HI ] && { _err "protobuf version < 3.x.x" : [$PROTOBUF_VER]; exit; }
+    [ 2 -ge $PROTOBUF_VER_HI ] && { _abortError "protobuf version < 3.x.x" : [$PROTOBUF_VER];  }
 #-----------------------------------------------------------------------------------------------------------------------
     DONE=0
     ATTEMPTS=3
