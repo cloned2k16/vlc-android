@@ -16,6 +16,8 @@ a likely working environment to build the core VLC library which make sense to t
 
 so pre compilation of the native core library will work as follow ..
 
+(make sure you set the correct location to your Android S & N DK ...
+
 
 ```shell
 git clone https://github.com/cloned2k16/vlc-android-lib.git
