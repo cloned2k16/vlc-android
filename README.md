@@ -35,7 +35,7 @@ with:
 ./compile-libvlc.sh -a arm64
 ./compile-libvlc.sh -a arm
 ./compile-libvlc.sh -a x86
-./compile-libvlc.sh -a mips
+./compile-libvlc.sh -a mips ## ( not working in my env )
 
 ```
 
