@@ -160,7 +160,6 @@ phase2
 phase3
     
 #-----------------------------------------------------------------------------------------------------------------------
-    _inf "bootstrapping main package .."
     NATIVE_BUILD_DIR="native-build"
     BASE_DIR="$(pwd)"
     
@@ -175,9 +174,10 @@ phase3
     touch .built
     cd ../../
 
+    _inf "bootstrapping main package .."
     [ -d "$NATIVE_BUILD_DIR" ] || mkdir "$NATIVE_BUILD_DIR"
     cd "$NATIVE_BUILD_DIR"
-    ./bootstrap
+    ../bootstrap
     touch .botstrapped
     cd ../
     
