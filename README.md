@@ -25,7 +25,7 @@ cd vlc-android-lib
 
 . ./_env.sh
 .makeContrib fetch-all
-.makeContrib install
+.makeContrib
 ```
 which will hopefully would get you ready to cross-compile for Android  
 with:
