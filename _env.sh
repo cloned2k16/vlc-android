@@ -10,25 +10,27 @@ myself=$$
                 ANDROID_SDK=/home/paolo/android-sdk
                 ANDROID_NDK=/home/paolo/android-sdk/android-ndk-r14b
 
-
-                       PATH="$PATH:$ANDROID_SDK/platform-tools:$ANDROID_SDK/tools"
+				ANDRO_PATHS="$ANDROID_SDK/platform-tools:$ANDROID_SDK/tools"
+				
+	[[ "$PATH" =~ "$ANDRO_PATHS" ]] && _inf "Already have Android PATH" || { echo -e "adding to PATH: $ANDRO_PATHS"; PATH="$PATH:$ANDRO_PATHS"; }
+	
                ANDROID_HOME="$ANDROID_SDK"
            ANDROID_NDK_HOME="$ANDROID_NDK"
                 
-                ANDROID_ABI=arm   
-                    RELEASE=0
+				SCRIPT_PATH=$(pwd)
+				
+#               ANDROID_ABI=arm   
+#                   RELEASE=0
                     
 # we expect to use a specific .git version of VLC ... 
 # override it if it make sense to you ...
 #
-                    VLC_URL="https://git.videolan.org/git/vlc/vlc-3.0.git"
-               VLC_CHECKOUT="tags/3.0.3-1"
-                   VLC_HASH=c2bb759264
+                    VLC_URL="https://github.com/cloned2k16/vlc.git"
+               VLC_CHECKOUT=
+                   VLC_HASH="a585a54f70b93a847c6f896fe75ddf63e6d7452c"
              FORCE_CHECKOUT=0
+HAVE_OWN_PROTOBUF_EXTENSION=1
 
-
-# compiles native x86_64 but none of ARM !!
-#VLC_HASH="5a7ad1b636"
 #-----------------------------------------------------------------------------------------------------------------------
     _ansiMsg        ()                                              {   
         local col;
@@ -54,6 +56,7 @@ myself=$$
 #-----------------------------------------------------------------------------------------------------------------------
     _abortError     ()                                              {
             _ansiMsg "!! $@"
+			cd "$SCRIPT_PATH"
             kill -s 2 $myself
     }
     _abortIfError   ()                                              {
@@ -71,7 +74,7 @@ myself=$$
 main(){    
 #-----------------------------------------------------------------------------------------------------------------------
 phase1
-#cat >/dev/null <<phase4
+#cat >/dev/null <<phase3
 
 #-----------------------------------------------------------------------------------------------------------------------
     ARCH="$(uname -p)"
@@ -123,7 +126,11 @@ phase2
     PROTOBUF_VER_HI=${PROTOBUF_VER%%.*}
     _inf protobuf version is: $PROTOBUF_VER
 #-----------------------------------------------------------------------------------------------------------------------
-    [ 2 -ge $PROTOBUF_VER_HI ] && { _abortError "protobuf version < 3.x.x" : [$PROTOBUF_VER];  }
+    if [ ! -z "$HAVE_OWN_PROTOBUF_EXTENSION" ]; then     
+		_wrn "skipping protobuf version check"
+	else 
+		[ 2 -ge $PROTOBUF_VER_HI ] && { _abortError "protobuf version < 3.x.x" : [$PROTOBUF_VER];  }
+	fi	
 #-----------------------------------------------------------------------------------------------------------------------
     DONE=0
     ATTEMPTS=3
@@ -140,6 +147,11 @@ phase2
             _log "VLC source found"
             cd vlc
         fi
+		
+		# TO.DO ..
+		# this is not really a reliable way to do it , 
+		# we better change it ..
+
         _inf "check integrity .."
         if ! git fsck --full;then 
             ATTEMPTS=$((ATTEMPTS-1))
@@ -181,8 +193,21 @@ phase3
     ./bootstrap
     touch .botstrapped
     _inf "building extra tools .."
-    make
+	# TODO ..
+	# scripts here aren't quite resilient so better split tasks 
+	# even better would be to fix with a minimal error checking ...
+	# workaround is to loop retry until done or give up
+	DOWNLOAD_OK=$(make fetch-all | tee /dev/tty | tail -n -1)
+	[ ! "$DOWNLOAD_OK" == "ake: Nothing to be done for 'fetch-all'." ]    && _inf "$DOWNLOAD_OK"  || _abortError "Error: can't download required src tools ..\n $DOWNLOAD_OK" 
+	
+	
+	# explicit call make all 
+	SHORT_RESULT=$(make all |  tee /dev/tty | tail -n -1)
+	[ "$SHORT_RESULT" == "You are ready to build VLC and its contribs" ]  && _inf "$SHORT_RESULT" || _abortError "Error: can't build Extra tools ... $SHORT_RESULT"
     touch .built
+	#ensure we reach first our compiled version of the tools we need ...
+	EXTRA_TOOLS_BIN_PATH="$SCRIPT_PATH/vlc/extras/tools/build/bin"
+	[[ "$PATH" =~ "$EXTRA_TOOLS_BIN_PATH" ]] && _inf "Already have extra tools path .." ||  PATH="$EXTRA_TOOLS_BIN_PATH:$PATH"
     cd ../../
 
     _inf "bootstrapping main package .."
@@ -191,7 +216,6 @@ phase3
     ../bootstrap
     touch .botstrapped
     cd ../
-    
     
     _inf "bootstrapping contrib libraries .."
     cd contrib
@@ -208,7 +232,25 @@ phase4
 
 #-----------------------------------------------------------------------------------------------------------------------
 
-    _inf "The End."
+    _inf "Next Steps ..."
+	_log "	./makeContrib fetch-all"
+	_log "	./makeContrib"
 }
 
-main
+	parseArgs		()												{
+		for i in "$@"
+		do
+			case $i in
+				--skip-protobuf-check)
+					HAVE_OWN_PROTOBUF_EXTENSION=1
+				;;
+				*)
+					_wrn "unknown option $1"
+				;;
+			esac
+		done
+	}
+
+parseArgs	"$@"
+
+main 
