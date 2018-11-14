@@ -32,20 +32,19 @@ SCRIPT_PATH=$(pwd)
 #
                     VLC_URL="https://github.com/cloned2k16/vlc-3.0.git"
                VLC_CHECKOUT=
-                   VLC_HASH="c2bb759264e1603d2a01ebcb13d7d9971af9512e"
+                   VLC_HASH="74d3d1d5e9a96fc2ba4c9410214a65008643d05e"
              FORCE_CHECKOUT=0
 HAVE_OWN_PROTOBUF_EXTENSION=1
 
+_inf "here we go"
 #-----------------------------------------------------------------------------------------------------------------------
 
     phase1(){ _inf PHASE 1; }
     phase2(){ _inf PHASE 2; }
     phase3(){ _inf PHASE 3; }
     phase4(){ _inf PHASE 4; }
-
-
-main(){    
 #-----------------------------------------------------------------------------------------------------------------------
+main(){    
 phase1
 #cat >/dev/null <<phase3
 
@@ -159,43 +158,55 @@ phase3
     NATIVE_BUILD_DIR="native-build"
     BASE_DIR="$(pwd)"
     
-    cd vlc
+	#ensure we reach first our compiled version of the tools we need ...
+	EXTRA_TOOLS_BIN_PATH="$SCRIPT_PATH/vlc/extras/tools/build/bin"
+	[[ "$PATH" =~ "$EXTRA_TOOLS_BIN_PATH" ]] && _inf "Already have extra tools path .." ||  PATH="$EXTRA_TOOLS_BIN_PATH:$PATH"
 
     _inf "bootstrapping extra tools .."
-    cd extras/tools/
-    ./bootstrap
-    touch .botstrapped
+    cd vlc/extras/tools/
+    ./bootstrap 2>&1 | tee /dev/tty > bootstrap.log 
+	BOOT_EXTRA_TOOLS=$(tail -n -1 bootstrap.log)
+    case $BOOT_EXTRA_TOOLS in
+		*"To-be-built packages:"*) 		        touch .botstrapped 									;;
+		*"bootstrap: Nothing to be done"*)		_inf "Tools are already build or correct" 			;;
+		*) 										_abortError "unexpected result: $BOOT_EXTRA_TOOLS" 	;;
+    esac  											
+	
     _inf "building extra tools .."
 	# TODO ..
 	# scripts here aren't quite resilient so better split tasks 
 	# even better would be to fix with a minimal error checking ...
 	# workaround is to loop retry until done or give up
-	DOWNLOAD_OK=$(make fetch-all | tee /dev/tty | tail -n -1)
-	[ ! "$DOWNLOAD_OK" == "ake: Nothing to be done for 'fetch-all'." ]    && _inf "$DOWNLOAD_OK"  || _abortError "Error: can't download required src tools ..\n $DOWNLOAD_OK" 
+	#DOWNLOAD_OK=$(make fetch-all | tee /dev/tty | tail -n -1)
+	make fetch-all 2>&1 | tee /dev/tty > make_fetch-all.log
+	DOWNLOAD_OK=$(tail -n -1 make_fetch-all.log)
+	[ ! "$DOWNLOAD_OK" == "ake: Nothing to be done for 'fetch-all'." ]     && _inf "$DOWNLOAD_OK"                   || _abortError "Error: can't download required src tools ..\n $DOWNLOAD_OK" 
 	
 	
 	# explicit call make all 
-	SHORT_RESULT=$(make all |  tee /dev/tty | tail -n -1)
-	[ "$SHORT_RESULT" == "You are ready to build VLC and its contribs" ]  && _inf "$SHORT_RESULT" || _abortError "Error: can't build Extra tools ... $SHORT_RESULT"
-    touch .built
-	#ensure we reach first our compiled version of the tools we need ...
-	EXTRA_TOOLS_BIN_PATH="$SCRIPT_PATH/vlc/extras/tools/build/bin"
-	[[ "$PATH" =~ "$EXTRA_TOOLS_BIN_PATH" ]] && _inf "Already have extra tools path .." ||  PATH="$EXTRA_TOOLS_BIN_PATH:$PATH"
+	make all 2>&1 |  tee /dev/tty > make_all.log
+	SHORT_RESULT=$(tail -n -1 make_all.log)
+	[ "$SHORT_RESULT" == "You are ready to build VLC and its contribs" ]  && { _inf "$SHORT_RESULT"; touch .built; } || _abortError "Error: can't build Extra tools ... $SHORT_RESULT"
+    
     cd ../../
 
     _inf "bootstrapping main package .."
     [ -d "$NATIVE_BUILD_DIR" ] || mkdir "$NATIVE_BUILD_DIR"
     cd "$NATIVE_BUILD_DIR"
-    ../bootstrap
-    touch .botstrapped
+	../bootstrap | tee /dev/tty > bootstrap.log
+    BOOT_NATIVE_BUILD=$(tail -n -1 bootstrap.log)
+	[ "$BOOT_NATIVE_BUILD" == "Successfully bootstrapped" ] && { _inf "$BOOT_NATIVE_BUILD"; touch .botstrapped; }    || _abortError "Error in bootstrap: $BOOT_NATIVE_BUILD"
+	 
     cd ../
     
     _inf "bootstrapping contrib libraries .."
     cd contrib
     [ -d "$NATIVE_BUILD_DIR" ] || mkdir "$NATIVE_BUILD_DIR"
     cd "$NATIVE_BUILD_DIR"
-    ../bootstrap
-    touch .botstrapped
+    ../bootstrap | tee /dev/tty > bootstrap.log
+    BOOT_CONTRIB_BUILD=$(tail -n -1 bootstrap.log)
+	[[ "$BOOT_CONTRIB_BUILD" =~ "show this text" ]] && { _inf "$BOOT_CONTRIB_BUILD"; touch .botstrapped; }    || _abortError "Error in bootstrap: $BOOT_CONTRIB_BUILD"
+
     # make  
     _wrn "use makeContrib <...>\n    instead\n       or change dir to $(pwd)"
     
@@ -208,6 +219,7 @@ phase4
     _inf "Next Steps ..."
 	_log "	./makeContrib fetch-all"
 	_log "	./makeContrib"
+	unset -f main
 }
 
 	parseArgs		()												{
@@ -222,8 +234,12 @@ phase4
 				;;
 			esac
 		done
+		unset -f parseArgs
 	}
+
+_inf "parsing args.."
 
 parseArgs	"$@"
 
+_inf "call to main.."
 main 

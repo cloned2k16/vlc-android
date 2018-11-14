@@ -1,0 +1,9 @@
+BASE_DIR=$(pwd)
+
+. ./utils.sh
+
+cd vlc/extras/tools
+
+make clean
+
+cd "$BASE_DIR"
