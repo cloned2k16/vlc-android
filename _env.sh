@@ -1,8 +1,12 @@
 #!/bin/sh
 
-[ $_ != $0 ] || { echo "Please source.Me !!  (. $0 ;)"; exit 666; } 
+[ $_ != $0  ] || { echo "Please source.Me !!  ( . $0 )"; exit 666; } 
 
-myself=$$
+. ./utils.sh
+
+MYSELF=$$
+SCRIPT_PATH=$(pwd)
+
 #-----------------------------------------------------------------------------------------------------------------------
 #   please make sure you set up this before you start
 #
@@ -10,66 +14,35 @@ myself=$$
                 ANDROID_SDK=/home/paolo/android-sdk
                 ANDROID_NDK=/home/paolo/android-sdk/android-ndk-r14b
 
+#
+#				
 				ANDRO_PATHS="$ANDROID_SDK/platform-tools:$ANDROID_SDK/tools"
 				
-	[[ "$PATH" =~ "$ANDRO_PATHS" ]] && _inf "Already have Android PATH" || { echo -e "adding to PATH: $ANDRO_PATHS"; PATH="$PATH:$ANDRO_PATHS"; }
+				[[ "$PATH" =~ "$ANDRO_PATHS" ]] && _inf "Already have Android PATH" || { _wrn "adding to PATH: $ANDRO_PATHS"; PATH="$PATH:$ANDRO_PATHS"; }
 	
                ANDROID_HOME="$ANDROID_SDK"
            ANDROID_NDK_HOME="$ANDROID_NDK"
                 
-				SCRIPT_PATH=$(pwd)
-				
+# not used (yet)				
 #               ANDROID_ABI=arm   
 #                   RELEASE=0
                     
 # we expect to use a specific .git version of VLC ... 
 # override it if it make sense to you ...
 #
-                    VLC_URL="https://github.com/cloned2k16/vlc.git"
+                    VLC_URL="https://github.com/cloned2k16/vlc-3.0.git"
                VLC_CHECKOUT=
-                   VLC_HASH="a585a54f70b93a847c6f896fe75ddf63e6d7452c"
+                   VLC_HASH="c2bb759264e1603d2a01ebcb13d7d9971af9512e"
              FORCE_CHECKOUT=0
 HAVE_OWN_PROTOBUF_EXTENSION=1
 
-#-----------------------------------------------------------------------------------------------------------------------
-    _ansiMsg        ()                                              {   
-        local col;
-        local who=${FUNCNAME[ 1 ]}
-        case $who in
-            _log)           col="\033[0;32m"                        ;;
-            _inf)           col="\033[0;36m"                        ;;
-            _wrn)           col="\033[0;33m"                        ;;
-            _err)           col="\033[0;31m"                        ;;
-            _abortError)    col="\033[38;2;255;11;33m"              ;;
-            *)              col="\033[0m"                           ;;
-        esac
-        echo -e "$col $@ \033[0m"
-    }
-#-----------------------------------------------------------------------------------------------------------------------
-    _log            ()                                              { _ansiMsg "~ $@" ; }
-#-----------------------------------------------------------------------------------------------------------------------
-    _inf            ()                                              { _ansiMsg "~ $@" ; }
-#-----------------------------------------------------------------------------------------------------------------------
-    _wrn            ()                                              { _ansiMsg "! $@" ; }
-#-----------------------------------------------------------------------------------------------------------------------
-    _err            ()                                              { _ansiMsg "! $@" ; }
-#-----------------------------------------------------------------------------------------------------------------------
-    _abortError     ()                                              {
-            _ansiMsg "!! $@"
-			cd "$SCRIPT_PATH"
-            kill -s 2 $myself
-    }
-    _abortIfError   ()                                              {
-        if [ ! $? -eq 0 ];then
-            _abortError "$@"
-        fi
-    }
 #-----------------------------------------------------------------------------------------------------------------------
 
     phase1(){ _inf PHASE 1; }
     phase2(){ _inf PHASE 2; }
     phase3(){ _inf PHASE 3; }
     phase4(){ _inf PHASE 4; }
+
 
 main(){    
 #-----------------------------------------------------------------------------------------------------------------------
